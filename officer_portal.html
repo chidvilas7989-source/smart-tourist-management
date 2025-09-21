@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Tourism - Officer Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --success-green: #28a745;
+            --danger-red: #dc3545;
+            --warning-orange: #ffc107;
+        }
+
+        body {
+            background-color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #007bff 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: transform 0.3s;
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .status-online {
+            border-left: 5px solid var(--success-green);
+        }
+
+        .status-offline {
+            border-left: 5px solid var(--danger-red);
+        }
+
+        .alert-panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .officer-badge {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .emergency-btn {
+            background: var(--danger-red);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .emergency-btn:hover {
+            background: #c82333;
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+
+        .location-item {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            padding: 15px;
+            border-left: 4px solid var(--primary-blue);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>Officer Portal
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i id="status-icon" class="fas fa-circle text-success"></i>
+                    <span id="status-text">On Duty</span>
+                </span>
+                <button class="btn btn-outline-light btn-sm" onclick="toggleDutyStatus()">
+                    <i class="fas fa-power-off me-1"></i>Toggle Status
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="officer-badge text-center">
+                    <i class="fas fa-badge-check me-2"></i>
+                    <span id="officer-badge">OFFICER ON DUTY</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Status Panel -->
+            <div class="col-md-4">
+                <div class="status-card status-online">
+                    <h5><i class="fas fa-tachometer-alt me-2 text-primary"></i>Status Overview</h5>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 id="active-tourists" class="text-primary">0</h3>
+                            <small>Active Tourists</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 id="active-alerts" class="text-danger">0</h3>
+                            <small>Active Alerts</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <button class="emergency-btn" onclick="reportEmergency()">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            EMERGENCY REPORT
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts Panel -->
+            <div class="col-md-8">
+                <div class="alert-panel">
+                    <h5><i class="fas fa-bell me-2 text-warning"></i>Active Alerts</h5>
+                    <div id="alerts-container">
+                        <p class="text-muted">Loading alerts...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <!-- Patrol Locations -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-route me-2"></i>Patrol Locations</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        <div id="patrol-locations">
+                            <p class="text-muted">Loading patrol locations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-tools me-2"></i>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="sendLocationUpdate()">
+                                <i class="fas fa-map-marker-alt me-2"></i>Update Location
+                            </button>
+                            <button class="btn btn-success" onclick="reportSafetyCheck()">
+                                <i class="fas fa-check-circle me-2"></i>Safety Check Complete
+                            </button>
+                            <button class="btn btn-warning" onclick="requestBackup()">
+                                <i class="fas fa-users me-2"></i>Request Backup
+                            </button>
+                            <button class="btn btn-info" onclick="viewTouristData()">
+                                <i class="fas fa-users me-2"></i>View Tourist Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <!-- Communication Center -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-comments me-2"></i>Communication Center</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Emergency Contacts</h6>
+                                <ul class="list-group">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span><i class="fas fa-phone text-primary me-2"></i>Control Room</span>
+                                        <span>100</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span><i class="fas fa-ambulance text-danger me-2"></i>Medical Emergency</span>
+                                        <span>102</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span><i class="fas fa-fire text-warning me-2"></i>Fire Department</span>
+                                        <span>101</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Quick Report</h6>
+                                <div class="mb-3">
+                                    <textarea class="form-control" id="incidentReport" rows="4" placeholder="Enter incident details..."></textarea>
+                                </div>
+                                <button class="btn btn-primary" onclick="submitReport()">
+                                    <i class="fas fa-paper-plane me-2"></i>Submit Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Modal -->
+    <div class="modal fade" id="emergencyModal" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Emergency Report
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <form id="emergencyForm">
+                        <div class="mb-3">
+                            <label class="form-label">Emergency Type</label>
+                            <select class="form-control" id="emergencyType" required>
+                                <option value="">Select Emergency Type</option>
+                                <option value="Medical">Medical Emergency</option>
+                                <option value="Security">Security Threat</option>
+                                <option value="Fire">Fire Incident</option>
+                                <option value="Accident">Accident</option>
+                                <option value="Tourist">Tourist in Distress</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" class="form-control" id="emergencyLocation" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="emergencyDescription" rows="4" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Priority Level</label>
+                            <select class="form-control" id="emergencyPriority" required>
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="submitEmergencyReport()">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Submit Emergency Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost:5000';
+        let officerStatus = 'online';
+
+        // Initialize officer portal
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOfficerData();
+            updateStatusDisplay();
+            setInterval(loadOfficerData, 30000); // Refresh every 30 seconds
+        });
+
+        async function loadOfficerData() {
+            try {
+                // Load alerts
+                const alertsResponse = await fetch(`${API_BASE_URL}/api/public/alerts`);
+                if (alertsResponse.ok) {
+                    const alerts = await alertsResponse.json();
+                    displayAlerts(alerts);
+                }
+
+                // Load patrol locations
+                const locationsResponse = await fetch(`${API_BASE_URL}/api/public/locations`);
+                if (locationsResponse.ok) {
+                    const locations = await locationsResponse.json();
+                    displayPatrolLocations(locations);
+                }
+
+                // Load statistics
+                const statsResponse = await fetch(`${API_BASE_URL}/api/public/stats`);
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    updateStatistics(stats);
+                }
+            } catch (error) {
+                console.error('Failed to load officer data:', error);
+            }
+        }
+
+        function displayAlerts(alerts) {
+            const container = document.getElementById('alerts-container');
+
+            if (alerts.length === 0) {
+                container.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>No active alerts at this time.</div>';
+                return;
+            }
+
+            container.innerHTML = alerts.map(alert => `
+                <div class="alert alert-${getAlertColor(alert.sensitivity)} alert-dismissible">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong><i class="fas fa-exclamation-triangle me-2"></i>${alert.name}</strong>
+                            <p class="mb-1">${alert.description}</p>
+                            <small><i class="fas fa-map-marker-alt me-1"></i>Location: ${alert.location}</small>
+                        </div>
+                        <span class="badge bg-${getAlertColor(alert.sensitivity)}">${alert.sensitivity}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayPatrolLocations(locations) {
+            const container = document.getElementById('patrol-locations');
+
+            if (locations.length === 0) {
+                container.innerHTML = '<p class="text-muted">No patrol locations available.</p>';
+                return;
+            }
+
+            container.innerHTML = locations.map(location => `
+                <div class="location-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1"><i class="fas fa-map-marker-alt me-2 text-primary"></i>${location.name}</h6>
+                            <p class="mb-2 text-muted small">${location.details}</p>
+                            <span class="badge bg-secondary">${location.type}</span>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="navigateToLocation('${location.name}')">
+                            <i class="fas fa-route"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStatistics(stats) {
+            document.getElementById('active-tourists').textContent = stats.total_tourists || 0;
+            document.getElementById('active-alerts').textContent = stats.active_alerts || 0;
+        }
+
+        function getAlertColor(sensitivity) {
+            switch(sensitivity?.toLowerCase()) {
+                case 'low': return 'info';
+                case 'medium': return 'warning';
+                case 'high': return 'danger';
+                case 'critical': return 'danger';
+                default: return 'secondary';
+            }
+        }
+
+        function toggleDutyStatus() {
+            officerStatus = officerStatus === 'online' ? 'offline' : 'online';
+            updateStatusDisplay();
+            showNotification(
+                officerStatus === 'online' ? 'You are now ON DUTY' : 'You are now OFF DUTY',
+                officerStatus === 'online' ? 'success' : 'warning'
+            );
+        }
+
+        function updateStatusDisplay() {
+            const statusIcon = document.getElementById('status-icon');
+            const statusText = document.getElementById('status-text');
+            const statusCard = document.querySelector('.status-card');
+
+            if (officerStatus === 'online') {
+                statusIcon.className = 'fas fa-circle text-success';
+                statusText.textContent = 'On Duty';
+                statusCard.className = 'status-card status-online';
+            } else {
+                statusIcon.className = 'fas fa-circle text-danger';
+                statusText.textContent = 'Off Duty';
+                statusCard.className = 'status-card status-offline';
+            }
+        }
+
+        function reportEmergency() {
+            const modal = new bootstrap.Modal(document.getElementById('emergencyModal'));
+            modal.show();
+        }
+
+        function submitEmergencyReport() {
+            const type = document.getElementById('emergencyType').value;
+            const location = document.getElementById('emergencyLocation').value;
+            const description = document.getElementById('emergencyDescription').value;
+            const priority = document.getElementById('emergencyPriority').value;
+
+            if (!type || !location || !description || !priority) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+
+            // Simulate emergency report submission
+            showNotification('Emergency report submitted successfully!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('emergencyModal')).hide();
+            document.getElementById('emergencyForm').reset();
+        }
+
+        function sendLocationUpdate() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    showNotification(`Location updated: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`, 'success');
+                }, function(error) {
+                    showNotification('Unable to get current location', 'error');
+                });
+            } else {
+                showNotification('Geolocation not supported by browser', 'error');
+            }
+        }
+
+        function reportSafetyCheck() {
+            showNotification('Safety check reported successfully', 'success');
+        }
+
+        function requestBackup() {
+            showNotification('Backup request sent to control room', 'info');
+        }
+
+        function viewTouristData() {
+            showNotification('Tourist data view requested', 'info');
+        }
+
+        function navigateToLocation(locationName) {
+            showNotification(`Navigation to ${locationName} initiated`, 'info');
+        }
+
+        function submitReport() {
+            const report = document.getElementById('incidentReport').value;
+            if (!report.trim()) {
+                showNotification('Please enter incident details', 'error');
+                return;
+            }
+
+            showNotification('Incident report submitted successfully', 'success');
+            document.getElementById('incidentReport').value = '';
+        }
+
+        function showNotification(message, type = 'info') {
+            const alertClass = {
+                'success': 'alert-success',
+                'error': 'alert-danger',
+                'warning': 'alert-warning',
+                'info': 'alert-info'
+            };
+
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass[type]} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
